@@ -7,33 +7,32 @@ class GildedRose(object):
 
     def update_quality(self):
         for item in self.items:
-            if item.name != "Aged Brie" and item.name != "Backstage passes to a TAFKAL80ETC concert":
-                if item.quality > 0:
-                    if item.name != "Sulfuras, Hand of Ragnaros":
-                        item.quality = item.quality - 1
-            else:
-                if item.quality < 50:
-                    item.quality = item.quality + 1
-                    if item.name == "Backstage passes to a TAFKAL80ETC concert":
-                        if item.sell_in < 11:
-                            if item.quality < 50:
-                                item.quality = item.quality + 1
-                        if item.sell_in < 6:
-                            if item.quality < 50:
-                                item.quality = item.quality + 1
-            if item.name != "Sulfuras, Hand of Ragnaros":
-                item.sell_in = item.sell_in - 1
-            if item.sell_in < 0:
-                if item.name != "Aged Brie":
-                    if item.name != "Backstage passes to a TAFKAL80ETC concert":
-                        if item.quality > 0:
-                            if item.name != "Sulfuras, Hand of Ragnaros":
-                                item.quality = item.quality - 1
+
+            #       1 for normal,       2 for conjured;                         rate doubles if sellout date passes
+            rate = (      1       + item.name.startswith("Conjured "))      *    ((item.sell_in <= 0) + 1)
+
+            match item.name:
+                case "Aged Brie":
+                    item.quality = min(item.quality + 1, 50)
+                
+                case "Sulfuras, Hand of Ragnaros":
+                    item.sell_in += 1 + (item.sell_in < 0)
+                
+                case "Backstage passes to a TAFKAL80ETC concert":
+                    if item.sell_in <= 0:       # left this one at 0 because tickets are still worth something on the day of the event up until it ends
+                        item.quality = 0
+                    elif item.sell_in <= 6:     # when 5 days left, aka since the 6th day before the event
+                        item.quality += 3
+                    elif item.sell_in <= 11:    # when 10 days left, aka since the 11th day before the event
+                        item.quality += 2
                     else:
-                        item.quality = item.quality - item.quality
-                else:
-                    if item.quality < 50:
-                        item.quality = item.quality + 1
+                        item.quality += 1
+                
+                case _:
+                    item.quality = max(0, item.quality - rate)
+            # end
+
+            item.sell_in -= 1
 
 
 class Item:
